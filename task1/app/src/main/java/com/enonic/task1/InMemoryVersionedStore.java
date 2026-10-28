@@ -4,6 +4,7 @@ import com.enonic.assignment.store.Change;
 import com.enonic.assignment.store.Snapshot;
 import com.enonic.assignment.store.VersionedStore;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -70,8 +71,8 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
     }
 
     @Override
-    public Snapshot snapshot() {
-        return null;
+    public Snapshot<K, V> snapshot() {
+        return new VersionSnapshot<>(this, currentVersion);
     }
 
     private synchronized long performLockedPut(K key, V value) {
@@ -99,5 +100,22 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
 
     private ConcurrentSkipListMap<Long, Change<K, V>> getOrCreateKeyHistory(K key) {
         return keyHistoryMap.computeIfAbsent(key, k -> new ConcurrentSkipListMap<>());
+    }
+
+    private record VersionSnapshot<K, V>(InMemoryVersionedStore<K, V> store, long version) implements Snapshot<K, V> {
+
+        @Override
+        public Optional<V> get(K key) {
+            return store.getAt(key, version);
+        }
+
+        @Override
+        public Map<K, V> asMap() {
+            Map<K, V> view = new HashMap<>();
+            for (K key : store.keyHistoryMap.keySet()) {
+                store.getAt(key, version).ifPresent(value -> view.put(key, value));
+            }
+            return Map.copyOf(view);
+        }
     }
 }
