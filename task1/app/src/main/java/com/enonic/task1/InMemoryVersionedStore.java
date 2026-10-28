@@ -32,25 +32,28 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
     }
 
     @Override
-    public Optional get(Object key) {
-        return Optional.empty();
+    public Optional<V> get(K key) {
+        long currentImmutableVersion = currentVersion;
+        return this.getAt(key, currentImmutableVersion);
     }
 
     @Override
     public Optional<V> getAt(K key, long version) {
         Objects.requireNonNull(key, "key must not be null");
+        long currentSafeVersion = currentVersion;
+        long realFloorVersion = Math.min(currentSafeVersion,version);
 
         ConcurrentSkipListMap<Long, Change<K, V>> historyForKey = keyHistoryMap.get(key);
         if (historyForKey == null) {
             return Optional.empty();
         }
 
-        Map.Entry<Long, Change<K, V>> lastGoodVersion = historyForKey.floorEntry(version);
-        if (lastGoodVersion == null) {
+        Map.Entry<Long, Change<K, V>> flooredVersion = historyForKey.floorEntry(realFloorVersion);
+        if (flooredVersion == null) {
             return Optional.empty();
         }
 
-        return switch (lastGoodVersion.getValue()) {
+        return switch (flooredVersion.getValue()) {
             case Change.Put<K, V>(_, _, V value) -> Optional.of(value);
             case Change.Remove<K, V>(_, _) -> Optional.empty();
         };
