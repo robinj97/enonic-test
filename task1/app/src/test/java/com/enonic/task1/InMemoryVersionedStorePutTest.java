@@ -50,6 +50,20 @@ class InMemoryVersionedStorePutTest {
     }
 
     @Test
+    void removeOnEmptyStoreDoesNotChangeVersion() {
+        assertEquals(0, store.remove("a"));
+        assertEquals(0, store.currentVersion());
+    }
+
+    @Test
+    void removingSameKeyTwiceDoesNotChangeVersion() {
+        store.put("a", "x");
+        assertEquals(2, store.remove("a"));
+        assertEquals(2, store.remove("a"));
+        assertEquals(2, store.currentVersion());
+    }
+
+    @Test
     void putRejectsNullKey() {
         assertThrows(NullPointerException.class, () -> store.put(null, "x"));
     }
