@@ -1,0 +1,38 @@
+plugins {
+    id 'com.enonic.xp.app'
+}
+
+dependencies {
+    implementation xplibs.api.core
+    implementation xplibs.api.portal
+    include xplibs.content
+    include xplibs.portal
+    //include xplibs.auth
+    //include xplibs.context
+    //include xplibs.project
+    //include xplibs.i18n
+    //include xplibs.io
+    //include xplibs.mail
+    //include xplibs.repo
+    //include xplibs.websocket
+
+    compileOnly "com.enonic.xp:core-api:${xpVersion}"
+    compileOnly "com.enonic.xp:script-api:${xpVersion}"
+
+    testImplementation "com.enonic.xp:core-api:${xpVersion}"
+    testImplementation "com.enonic.xp:script-api:${xpVersion}"
+    testImplementation platform("org.junit:junit-bom:5.12.2")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+    testImplementation "org.mockito:mockito-core:5.17.0"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    xp.enonicRepo()
+}
+
+test {
+    useJUnitPlatform()
+}
