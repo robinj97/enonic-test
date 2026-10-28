@@ -4,6 +4,7 @@ import com.enonic.assignment.store.Change;
 import com.enonic.assignment.store.Snapshot;
 import com.enonic.assignment.store.VersionedStore;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,8 +37,23 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
     }
 
     @Override
-    public Optional getAt(Object key, long version) {
-        return Optional.empty();
+    public Optional<V> getAt(K key, long version) {
+        Objects.requireNonNull(key, "key must not be null");
+
+        ConcurrentSkipListMap<Long, Change<K, V>> historyForKey = keyHistoryMap.get(key);
+        if (historyForKey == null) {
+            return Optional.empty();
+        }
+
+        Map.Entry<Long, Change<K, V>> lastGoodVersion = historyForKey.floorEntry(version);
+        if (lastGoodVersion == null) {
+            return Optional.empty();
+        }
+
+        return switch (lastGoodVersion.getValue()) {
+            case Change.Put<K, V>(_, _, V value) -> Optional.of(value);
+            case Change.Remove<K, V>(_, _) -> Optional.empty();
+        };
     }
 
     @Override
