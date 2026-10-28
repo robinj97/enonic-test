@@ -35,4 +35,7 @@ repositories {
 
 test {
     useJUnitPlatform()
+
+    // Mockito 5.17's Byte Buddy does not officially support Java 25 yet.
+    jvmArgs "-Dnet.bytebuddy.experimental=true"
 }
