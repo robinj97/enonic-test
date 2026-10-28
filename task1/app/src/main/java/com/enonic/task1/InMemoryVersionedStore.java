@@ -25,8 +25,9 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
     }
 
     @Override
-    public long remove(Object key) {
-        return 0;
+    public long remove(K key) {
+        Objects.requireNonNull(key, "key must not be null");
+        return performLockedRemove(key);
     }
 
     @Override
@@ -59,6 +60,20 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
         Change<K,V> putOperation = new Change.Put<>(newVersion, key, value);
         ConcurrentSkipListMap<Long, Change<K, V>> history = getOrCreateKeyHistory(key);
         history.put(newVersion, putOperation);
+        this.currentVersion = newVersion;
+        return newVersion;
+    }
+
+    private synchronized long performLockedRemove(K key) {
+        ConcurrentSkipListMap<Long, Change<K, V>> history = keyHistoryMap.get(key);
+        boolean keyIsPresent = history != null
+                && history.lastEntry().getValue() instanceof Change.Put;
+        if (!keyIsPresent) {
+            return this.currentVersion;
+        }
+        long newVersion = this.currentVersion + 1;
+        Change<K, V> removeOperation = new Change.Remove<>(newVersion, key);
+        history.put(newVersion, removeOperation);
         this.currentVersion = newVersion;
         return newVersion;
     }
