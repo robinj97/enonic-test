@@ -1,0 +1,13 @@
+3. PR review
+- If this is a singleton field should be private static final (HIGH)
+- Also implement a thread safe version of the singleton so instantiate the field and get instance just returns the instance (HIGH)
+- make constructor private (HIGH)
+- Report key is missing hashCode, toString. I also think theres a NPE issue in the returns statement of equals method no null check on input. Make this a record if youre too lazy. (HIGH)
+- load can throw RuntimeException, maybe handle this better? (MED)
+- findCached you are catching a generic exception, should be catching specific exceptions you know you can handle. (double check this one). Also object is missing hashcode so this is a big issue on calculating the index for the key. (MED)
+- findCached: The catch only exists because Optional.of(null) throws an NPE on a cache miss, so an exception is being used for control flow. The fix is return Optional.ofNullable(cache.get(new ReportKey(id))); with no try/catch at all. (LOW)
+- titles function: titled is still a stream, maybe collect it as a list first, you can also just count directly in the stream no need for if conditions. count closes the stream so the map on the stream would fail. Do you need a count if you can check isEmpty? (MED)
+- for exportAll maybe add the tasks into a list of futures and do futures to get to check the result of each? Otherwise how will you know what happened? (HIGH)
+- await function catches an exception and does nothing with it. (HIGH)
+- HashMap isnt threadsafe, use concurrentHashmap instead  (HIGH)
+- Code has some security issues as well with path traversal concerns where i can pass in ../../ and get access to a dir outside the intended dir. You can mitigate using startsWith to check basedir. (HIGH)
