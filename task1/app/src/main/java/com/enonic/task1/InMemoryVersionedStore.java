@@ -21,7 +21,7 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
     public long put(K key, V value) {
         Objects.requireNonNull(key, "key must not be null");
         Objects.requireNonNull(value, "value must not be null");
-        return 0;
+        return performLockedPut(key, value);
     }
 
     @Override
@@ -45,12 +45,25 @@ public class InMemoryVersionedStore<K,V> implements VersionedStore<K, V> {
     }
 
     @Override
-    public Stream<Change> changesSince(long sinceVersion) {
+    public Stream<Change<K, V>> changesSince(long sinceVersion) {
         return Stream.empty();
     }
 
     @Override
     public Snapshot snapshot() {
         return null;
+    }
+
+    private synchronized long performLockedPut(K key, V value) {
+        long newVersion = this.currentVersion + 1;
+        Change<K,V> putOperation = new Change.Put<>(newVersion, key, value);
+        ConcurrentSkipListMap<Long, Change<K, V>> history = getOrCreateKeyHistory(key);
+        history.put(newVersion, putOperation);
+        this.currentVersion = newVersion;
+        return newVersion;
+    }
+
+    private ConcurrentSkipListMap<Long, Change<K, V>> getOrCreateKeyHistory(K key) {
+        return keyHistoryMap.computeIfAbsent(key, k -> new ConcurrentSkipListMap<>());
     }
 }
