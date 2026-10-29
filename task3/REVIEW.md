@@ -8,6 +8,7 @@
 - findCached: The catch only exists because Optional.of(null) throws an NPE on a cache miss, so an exception is being used for control flow. The fix is return Optional.ofNullable(cache.get(new ReportKey(id))); with no try/catch at all. (LOW)
 - titles function: titled is still a stream, maybe collect it as a list first, you can also just count directly in the stream no need for if conditions. count closes the stream so the map on the stream would fail. Do you need a count if you can check isEmpty? (HIGH)
 - for exportAll maybe add the tasks into a list of futures and do futures to get to check the result of each? Otherwise how will you know what happened? (HIGH)
+- exportAll also shuts down the threadpool. For a shared singleton, after invoking that method once, others will not be able to access the thread pool. Also shutdown exits quickly so the tasks submitted to the pool may not even have finished. Hard to say without futures.get on the task.
 - await function catches an exception and does nothing with it. It swallows the exception and doesnt restore thread interrupt flag (HIGH)
 - HashMap isnt threadsafe, use concurrentHashmap instead  (HIGH)
 - Code has some security issues as well with path traversal concerns where i can pass in ../../ and get access to a dir outside the intended dir. You can mitigate using startsWith to check basedir. (HIGH)
